@@ -27,31 +27,39 @@ Aplicativo desktop para Windows voltado a suporte técnico: diagnóstico de hard
 4. O relatório é gerado com os resultados.
 5. O relatório é enviado por e-mail ao destinatário.
 
-## Telas
+---
 
-### Tela inicial
+## Tela inicial
 
-Painel central com status geral da máquina, hardware, desempenho, temperatura e acesso rápido às funções.
+Painel central com status geral da máquina, informações de hardware e desempenho, indicadores de temperatura e uso, e acesso rápido às principais funções.
 
-<img src="IMAGENS/tela%20inicial.jpg" alt="Tela inicial" width="800">
+<kbd><img src="IMAGENS/tela%20inicial.jpg" alt="Tela inicial" width="800"></kbd>
 
-### Limpeza e manutenção
+---
 
-Remoção de temporários, cache e dados de uso do sistema.
+## Limpeza e manutenção
 
-<img src="IMAGENS/Tela_limpeza.jpg" alt="Limpeza e manutenção" width="800">
+Identifica e remove arquivos temporários, cache e dados de uso do sistema, sem depender de programas externos.
 
-### Geração de relatórios
+<kbd><img src="IMAGENS/Tela_limpeza.jpg" alt="Limpeza e manutenção" width="800"></kbd>
 
-Consolida as informações coletadas em um relatório exportável.
+---
 
-<img src="IMAGENS/tela_gerarRelatorios.jpg" alt="Geração de relatórios" width="800">
+## Geração de relatórios
 
-### Envio de e-mail
+Consolida as informações coletadas em um relatório exportável, usado para documentar o diagnóstico e a manutenção.
 
-Define remetente e destinatário e envia o relatório.
+<kbd><img src="IMAGENS/tela_gerarRelatorios.jpg" alt="Gerar relatórios" width="800"></kbd>
 
-<img src="IMAGENS/tela_email.jpg" alt="Envio de e-mail" width="800">
+---
+
+## Envio de e-mail
+
+Define remetente e destinatário, prepara o relatório e o envia pela API de e-mail configurada.
+
+<kbd><img src="IMAGENS/tela_email.jpg" alt="E-mail" width="800"></kbd>
+
+---
 
 ## Tecnologias
 
