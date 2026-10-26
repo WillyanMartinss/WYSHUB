@@ -43,6 +43,7 @@ namespace SystemWM.Services
                             Nome = nome,
                             Versao = sub?.GetValue("DisplayVersion") as string ?? "",
                             Fabricante = sub?.GetValue("Publisher") as string ?? "",
+                            UninstallString = sub?.GetValue("UninstallString") as string ?? ""
                         };
 
                         if (sub?.GetValue("EstimatedSize") is int tamanhoKb)

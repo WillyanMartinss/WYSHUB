@@ -371,14 +371,28 @@ namespace SystemWM.Views
         {
             try
             {
-                var owner = Window.GetWindow(this);
-                var wizard = new SetupWizardWindow
+                var owner = Window.GetWindow(this) ?? Application.Current?.MainWindow;
+                var wizard = new SetupWizardWindow();
+
+                if (owner != null)
                 {
-                    Owner = owner
+                    wizard.Owner = owner;
+                    wizard.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+                }
+                else
+                {
+                    wizard.WindowStartupLocation = WindowStartupLocation.CenterScreen;
+                }
+
+                wizard.Topmost = true;
+                wizard.Loaded += (_, _) =>
+                {
+                    wizard.Topmost = false;
+                    wizard.Activate();
                 };
 
-                wizard.ShowDialog();
-                AtualizarStatusApi(_apiValida, "Assistente de instalação encerrado.");
+                wizard.Show();
+                AtualizarStatusApi(_apiValida, "Assistente de instalação aberto.");
             }
             catch (Exception ex)
             {

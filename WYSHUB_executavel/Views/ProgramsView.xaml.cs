@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -26,12 +27,16 @@ namespace SystemWM.Views
 
         private void CarregarProgramas()
         {
-            _programas = AppState.UltimosProgramas ?? AppState.Programs.Listar();
+            var programasCarregados = AppState.UltimosProgramas ?? AppState.Programs.Listar();
+            _programas = programasCarregados;
             AppState.UltimosProgramas = _programas;
 
-            foreach (var programa in _programas)
+            if (AppState.UltimosProgramas == null || !AppState.UltimosProgramas.Any(p => p.IncluirNoRelatorio))
             {
-                programa.IncluirNoRelatorio = false;
+                foreach (var programa in _programas)
+                {
+                    programa.IncluirNoRelatorio = false;
+                }
             }
 
             AtualizarListaProgramas();
@@ -58,6 +63,83 @@ namespace SystemWM.Views
         {
             AtualizarContadorProgramas();
             AtualizarPainelSelecionados();
+        }
+
+        private void DesinstalarPrograma_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is not MenuItem menuItem)
+            {
+                return;
+            }
+
+            if (menuItem.CommandParameter is not ProgramaInstalado programa)
+            {
+                return;
+            }
+
+            DesinstalarPrograma(programa);
+        }
+
+        private void DesinstalarPrograma(ProgramaInstalado programa)
+        {
+            if (programa == null)
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(programa.UninstallString))
+            {
+                MessageBox.Show($"Não foi possível encontrar um comando de desinstalação para '{programa.Nome}'.", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            var confirmacao = MessageBox.Show($"Deseja iniciar a desinstalação de '{programa.Nome}'?", "SystemWM", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (confirmacao != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            try
+            {
+                var startInfo = CriarStartInfoDesinstalacao(programa.UninstallString);
+                Process.Start(startInfo);
+                MessageBox.Show($"A desinstalação de '{programa.Nome}' foi iniciada.", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível iniciar a desinstalação: {ex.Message}", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private static ProcessStartInfo CriarStartInfoDesinstalacao(string uninstallString)
+        {
+            var comando = uninstallString.Trim();
+            var startInfo = new ProcessStartInfo { UseShellExecute = true, Verb = "runas" };
+
+            if (string.IsNullOrWhiteSpace(comando))
+            {
+                throw new InvalidOperationException("Comando de desinstalação vazio.");
+            }
+
+            if (comando.StartsWith('"'))
+            {
+                var fimCaminho = comando.IndexOf('"', 1);
+                if (fimCaminho > 1)
+                {
+                    startInfo.FileName = comando[1..fimCaminho];
+                    startInfo.Arguments = comando[(fimCaminho + 1)..].Trim();
+                    return startInfo;
+                }
+            }
+
+            var partes = comando.Split(new[] { ' ' }, 2, StringSplitOptions.RemoveEmptyEntries);
+            startInfo.FileName = partes[0];
+            if (partes.Length > 1)
+            {
+                startInfo.Arguments = partes[1];
+            }
+
+            return startInfo;
         }
 
         private void BtnSelecionarTodos_Click(object sender, RoutedEventArgs e)

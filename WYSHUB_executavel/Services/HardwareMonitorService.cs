@@ -92,11 +92,24 @@ namespace SystemWM.Services
             return ColetarTudo(false);
         }
 
+        private static IEnumerable<ISensor> ObterSensoresDoHardware(IHardware hw)
+        {
+            var sensores = new List<ISensor>();
+            if (hw == null)
+                return sensores;
+
+            sensores.AddRange(hw.Sensors);
+            sensores.AddRange(hw.SubHardware.SelectMany(sh => sh.Sensors));
+            return sensores;
+        }
+
         private static ISensor? BuscarSensor(IHardware hw, SensorType tipo, params string[] nomesPreferidos)
         {
-            var sensores = hw.Sensors.Where(s => s.SensorType == tipo && s.Value.HasValue && s.Value.Value > 0).ToList();
+            var sensores = ObterSensoresDoHardware(hw)
+                .Where(s => s.SensorType == tipo && s.Value.HasValue && s.Value.Value > 0)
+                .ToList();
             if (sensores.Count == 0)
-                return hw.Sensors.FirstOrDefault(s => s.SensorType == tipo);
+                return ObterSensoresDoHardware(hw).FirstOrDefault(s => s.SensorType == tipo);
 
             foreach (var nome in nomesPreferidos)
             {
@@ -115,7 +128,9 @@ namespace SystemWM.Services
 
             info.Nome = cpu.Name;
 
-            var usoTotal = cpu.Sensors.Where(s => s.SensorType == SensorType.Load && s.Value.HasValue)
+            var sensoresCpu = ObterSensoresDoHardware(cpu).ToList();
+
+            var usoTotal = sensoresCpu.Where(s => s.SensorType == SensorType.Load && s.Value.HasValue)
                 .OrderByDescending(s => s.Value ?? 0)
                 .FirstOrDefault(s => s.Name.Contains("Total", StringComparison.OrdinalIgnoreCase)
                     || s.Name.Contains("CPU", StringComparison.OrdinalIgnoreCase)
@@ -124,17 +139,17 @@ namespace SystemWM.Services
             double usoCpu = usoTotal?.Value ?? 0;
             if (usoCpu <= 0)
             {
-                var loadSensors = cpu.Sensors.Where(s => s.SensorType == SensorType.Load && s.Value.HasValue).Select(s => s.Value ?? 0).ToList();
+                var loadSensors = sensoresCpu.Where(s => s.SensorType == SensorType.Load && s.Value.HasValue).Select(s => s.Value ?? 0).ToList();
                 usoCpu = loadSensors.Count > 0 ? loadSensors.Average() : ObterUsoCpuFallback();
             }
 
             info.UsoAtualPercent = Math.Round(Math.Max(0, Math.Min(100, usoCpu)), 1);
 
-            var clocks = cpu.Sensors.Where(s => s.SensorType == SensorType.Clock && s.Value.HasValue && s.Value.Value > 0).ToList();
+            var clocks = sensoresCpu.Where(s => s.SensorType == SensorType.Clock && s.Value.HasValue && s.Value.Value > 0).ToList();
             if (clocks.Any())
                 info.FrequenciaAtualGHz = Math.Round((clocks.Max(s => s.Value) ?? 0) / 1000.0, 2);
 
-            var loadsPorNucleo = cpu.Sensors
+            var loadsPorNucleo = sensoresCpu
                 .Where(s => s.SensorType == SensorType.Load && s.Value.HasValue && s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(s => s.Name)
                 .Select(s => Math.Round(s.Value ?? 0, 1))
@@ -142,7 +157,7 @@ namespace SystemWM.Services
             if (loadsPorNucleo.Count > 0)
                 info.CargaPorNucleo = loadsPorNucleo;
 
-            var temperaturasPorNucleo = cpu.Sensors
+            var temperaturasPorNucleo = sensoresCpu
                 .Where(s => s.SensorType == SensorType.Temperature && s.Value.HasValue && s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase))
                 .OrderBy(s => s.Name)
                 .Select(s => Math.Round(s.Value ?? 0, 1))
@@ -150,17 +165,28 @@ namespace SystemWM.Services
             if (temperaturasPorNucleo.Count > 0)
                 info.TemperaturaPorNucleo = temperaturasPorNucleo;
 
-            var tempSensors = cpu.Sensors
+            var tempSensors = sensoresCpu
                 .Where(s => s.SensorType == SensorType.Temperature && s.Value.HasValue)
                 .OrderByDescending(s => s.Value ?? 0)
                 .ToList();
 
             var tempPackage = tempSensors.FirstOrDefault(s => s.Name.Contains("Package", StringComparison.OrdinalIgnoreCase)
-                || s.Name.Contains("CPU", StringComparison.OrdinalIgnoreCase)
-                || s.Name.Contains("Processor", StringComparison.OrdinalIgnoreCase));
+                || s.Name.Contains("Tctl", StringComparison.OrdinalIgnoreCase)
+                || s.Name.Contains("Tdie", StringComparison.OrdinalIgnoreCase));
             var tempCore = tempSensors.FirstOrDefault(s => s.Name.Contains("Core", StringComparison.OrdinalIgnoreCase));
-            var temp = tempPackage ?? tempCore ?? tempSensors.FirstOrDefault();
-            info.TemperaturaC = Math.Round(temp?.Value ?? 0, 1);
+            if (tempPackage != null)
+            {
+                info.TemperaturaC = Math.Round((double)tempPackage.Value, 1);
+            }
+            else if (info.TemperaturaPorNucleo.Count > 0)
+            {
+                info.TemperaturaC = Math.Round(info.TemperaturaPorNucleo.Average(), 1);
+            }
+            else
+            {
+                var temp = tempCore ?? tempSensors.FirstOrDefault();
+                info.TemperaturaC = Math.Round(temp?.Value ?? 0, 1);
+            }
 
             var power = BuscarSensor(cpu, SensorType.Power, "Package", "CPU", "Total");
             info.TdpWatts = Math.Round(power?.Value ?? 0, 1);
@@ -267,6 +293,27 @@ namespace SystemWM.Services
             return info;
         }
 
+        public static string FormatarSaudeDisco(double? saudePercent)
+        {
+            if (saudePercent is not double valor || double.IsNaN(valor) || double.IsInfinity(valor) || valor <= 0)
+                return "Saudável";
+
+            var percentual = Math.Round(Math.Max(0, Math.Min(100, valor)), 0);
+            var status = percentual >= 90
+                ? "Excelente"
+                : percentual >= 80
+                    ? "Bom"
+                    : percentual >= 70
+                        ? "Saudável"
+                        : percentual >= 55
+                            ? "OK"
+                            : percentual >= 35
+                                ? "Ruim"
+                                : "Crítico";
+
+            return $"{percentual:0}% ({status})";
+        }
+
         public List<DiscoInfo> ColetarDiscos()
         {
             var lista = new List<DiscoInfo>();
@@ -288,10 +335,8 @@ namespace SystemWM.Services
                 d.TemperaturaC = temp?.Value ?? 0;
 
                 var vida = disco.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Level && s.Name.Contains("Life", StringComparison.OrdinalIgnoreCase));
-                var saude = vida?.Value ?? 100;
-                d.SaudePercentTexto = saude >= 90 ? $"{saude:0}% (Excelente)"
-                                    : saude >= 70 ? $"{saude:0}% (Boa)"
-                                    : $"{saude:0}% (Atenção)";
+                var saude = vida?.Value;
+                d.SaudePercentTexto = FormatarSaudeDisco(saude);
 
                 var usoSensor = disco.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Load)
                                ?? disco.Sensors.FirstOrDefault(s => s.SensorType == SensorType.Data && s.Name.Contains("Used", StringComparison.OrdinalIgnoreCase));

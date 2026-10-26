@@ -50,28 +50,28 @@
                     </StackPanel>
                 </Border>
 
-            <Border Style="{StaticResource CardStyle}" Margin="0,0,0,14">
+            <Border Margin="0,0,0,14" Padding="16" CornerRadius="14" Background="#0F172A" BorderBrush="#5B8DEF" BorderThickness="1.2">
                 <StackPanel>
-                    <TextBlock Text="Backup de limpeza" Style="{StaticResource TituloCard}" Margin="0,0,0,10"/>
+                    <TextBlock Text="Backup de limpeza" Foreground="#F8FAFC" FontSize="18" FontWeight="Bold" Margin="0,0,0,10"/>
                     <CheckBox x:Name="ChkLimparAutomaticamenteBackup"
                               Content="Limpar automaticamente a pasta de backup"
-                              Foreground="{StaticResource TextoPrimario}"
+                              Foreground="#F8FAFC"
                               Margin="0,0,0,10"
                               Checked="ChkLimparAutomaticamenteBackup_Checked"
                               Unchecked="ChkLimparAutomaticamenteBackup_Checked"/>
-                    <TextBlock Text="Selecione o período para apagar automaticamente o conteúdo da pasta de backup." Style="{StaticResource LabelSecundario}" Margin="0,0,0,12"/>
+                    <TextBlock Text="Selecione o período para apagar automaticamente o conteúdo da pasta de backup." Foreground="#CBD5E1" Margin="0,0,0,12" TextWrapping="Wrap"/>
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,10">
-                        <RadioButton x:Name="RbRetencao30" Content="30 dias" GroupName="RetencaoBackup" Margin="0,0,12,0" IsEnabled="False"/>
-                        <RadioButton x:Name="RbRetencao60" Content="60 dias" GroupName="RetencaoBackup" Margin="0,0,12,0" IsEnabled="False"/>
-                        <RadioButton x:Name="RbRetencao90" Content="90 dias" GroupName="RetencaoBackup" IsEnabled="False"/>
+                        <RadioButton x:Name="RbRetencao30" Content="30 dias" GroupName="RetencaoBackup" Margin="0,0,12,0" IsEnabled="False" Foreground="#E2E8F0"/>
+                        <RadioButton x:Name="RbRetencao60" Content="60 dias" GroupName="RetencaoBackup" Margin="0,0,12,0" IsEnabled="False" Foreground="#E2E8F0"/>
+                        <RadioButton x:Name="RbRetencao90" Content="90 dias" GroupName="RetencaoBackup" IsEnabled="False" Foreground="#E2E8F0"/>
                     </StackPanel>
-                    <TextBlock Text="Pasta de backup atual" Style="{StaticResource LabelSecundario}" Margin="0,0,0,4"/>
-                    <TextBlock x:Name="TxtBackupPastaSelecionada" Style="{StaticResource LabelSecundario}" Text="Nenhuma pasta de backup selecionada" TextWrapping="Wrap"/>
-                    <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-                        <Button x:Name="BtnSelecionarPastaBackupSettings" Content="Selecionar pasta de backup" Style="{StaticResource BotaoPrimario}" Margin="0,0,8,0" Click="BtnSelecionarPastaBackupSettings_Click" IsEnabled="False"/>
-                        <CheckBox x:Name="ChkUsarPastaBackup" Content="Usar pasta de backup" Foreground="{StaticResource TextoPrimario}" VerticalAlignment="Center" Checked="ChkUsarPastaBackup_Changed" Unchecked="ChkUsarPastaBackup_Changed"/>
+                    <TextBlock Text="Pasta de backup atual" Foreground="#CBD5E1" Margin="0,0,0,4"/>
+                    <TextBlock x:Name="TxtBackupPastaSelecionada" Foreground="#F8FAFC" Text="Nenhuma pasta de backup selecionada" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,0">
+                        <Button x:Name="BtnSelecionarPastaBackupSettings" Content="Selecionar pasta de backup" Margin="0,0,8,0" Click="BtnSelecionarPastaBackupSettings_Click" IsEnabled="False" Background="#2563EB" Foreground="White" BorderBrush="#1D4ED8" BorderThickness="1" Padding="12,6"/>
+                        <CheckBox x:Name="ChkUsarPastaBackup" Content="Usar pasta de backup" Foreground="#F8FAFC" VerticalAlignment="Center" Checked="ChkUsarPastaBackup_Changed" Unchecked="ChkUsarPastaBackup_Changed"/>
                     </StackPanel>
-                    <Button x:Name="BtnRestaurarBackup" Content="Restaurar backup" Style="{StaticResource BotaoSecundario}" Margin="0,10,0,0" Click="BtnRestaurarBackup_Click"/>
+                    <Button x:Name="BtnRestaurarBackup" Content="Restaurar backup" Margin="0,10,0,0" Click="BtnRestaurarBackup_Click" Background="#F59E0B" Foreground="White" BorderBrush="#D97706" BorderThickness="1" Padding="12,6"/>
                 </StackPanel>
             </Border>
             </StackPanel>

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.NetworkInformation;
+using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -15,6 +16,9 @@ namespace SystemWM.Views
 {
     public partial class FirewallView : UserControl
     {
+        private const string PlaceholderPortaRapida = "Digite uma porta (ex.: 3050)";
+        private const string PlaceholderBusca = "Buscar porta, app ou IP";
+
         private List<PortaAtivaInfo> _portasOriginais = new();
 
         public FirewallView()
@@ -22,6 +26,7 @@ namespace SystemWM.Views
             try
             {
                 InitializeComponent();
+                InicializarPlaceholders();
                 InicializarMenuContextoPortas();
                 Loaded += FirewallView_Loaded;
                 LogDiagnostic("FirewallView constructed successfully.");
@@ -69,8 +74,113 @@ namespace SystemWM.Views
             }
         }
 
+        private void InicializarPlaceholders()
+        {
+            SetPlaceholder(TxtPortaRapida, PlaceholderPortaRapida);
+            SetPlaceholder(TxtBusca, PlaceholderBusca);
+        }
+
+        private void SetPlaceholder(TextBox textBox, string placeholder)
+        {
+            if (textBox == null)
+                return;
+
+            if (string.IsNullOrWhiteSpace(textBox.Text) || textBox.Text == placeholder)
+            {
+                textBox.Text = placeholder;
+                textBox.Foreground = System.Windows.Media.Brushes.LightGray;
+            }
+        }
+
+        private void TextBoxPlaceholder_GotFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBox textBox)
+                return;
+
+            var placeholder = GetPlaceholderForTextBox(textBox);
+            if (string.IsNullOrWhiteSpace(placeholder))
+                return;
+
+            if (textBox.Text == placeholder)
+            {
+                textBox.Text = string.Empty;
+                textBox.Foreground = TryFindResource("TextoPrimario") as System.Windows.Media.Brush ?? System.Windows.Media.Brushes.White;
+            }
+        }
+
+        private void TextBoxPlaceholder_LostFocus(object sender, RoutedEventArgs e)
+        {
+            if (sender is not TextBox textBox)
+                return;
+
+            var placeholder = GetPlaceholderForTextBox(textBox);
+            if (string.IsNullOrWhiteSpace(placeholder))
+                return;
+
+            if (string.IsNullOrWhiteSpace(textBox.Text))
+            {
+                textBox.Text = placeholder;
+                textBox.Foreground = System.Windows.Media.Brushes.LightGray;
+            }
+        }
+
+        private string GetPlaceholderForTextBox(TextBox textBox)
+        {
+            return textBox.Name switch
+            {
+                nameof(TxtPortaRapida) => PlaceholderPortaRapida,
+                nameof(TxtBusca) => PlaceholderBusca,
+                _ => string.Empty,
+            };
+        }
+
+        private bool GarantirElevacaoSeNecessaria()
+        {
+            if (IsAdministrator())
+                return true;
+
+            var resultado = MessageBox.Show(
+                "Este recurso do Firewall precisa de privilégios de administrador. Reabrir o WYSHUB como administrador?",
+                "SystemWM",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (resultado != MessageBoxResult.Yes)
+                return false;
+
+            try
+            {
+                var currentExe = Process.GetCurrentProcess().MainModule?.FileName ?? Environment.ProcessPath ?? "WYSHUB.exe";
+                var startInfo = new ProcessStartInfo
+                {
+                    FileName = currentExe,
+                    Verb = "runas",
+                    UseShellExecute = true
+                };
+
+                Process.Start(startInfo);
+                Application.Current.Shutdown();
+                return false;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível reabrir como administrador:\n{ex.Message}", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+        }
+
+        private static bool IsAdministrator()
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            var principal = new WindowsPrincipal(identity);
+            return principal.IsInRole(WindowsBuiltInRole.Administrator);
+        }
+
         private async Task CarregarAsync()
         {
+            if (!GarantirElevacaoSeNecessaria())
+                return;
+
             try
             {
                 TxtStatusFirewall.Text = "Verificando...";
@@ -96,6 +206,9 @@ namespace SystemWM.Views
 
         private async void BtnAtivar_Click(object sender, RoutedEventArgs e)
         {
+            if (!GarantirElevacaoSeNecessaria())
+                return;
+
             bool ok = await Task.Run(() => AppState.Firewall.AtivarFirewall());
             if (ok) AtualizarStatusVisual(true);
             else MessageBox.Show("Não foi possível ativar o Firewall. Confirme se o programa está rodando como Administrador.", "SystemWM");
@@ -103,6 +216,9 @@ namespace SystemWM.Views
 
         private async void BtnDesativar_Click(object sender, RoutedEventArgs e)
         {
+            if (!GarantirElevacaoSeNecessaria())
+                return;
+
             var confirmar = MessageBox.Show(
                 "Tem certeza que deseja DESATIVAR o Firewall do Windows? Isso reduz a proteção da máquina.",
                 "Confirmar", MessageBoxButton.YesNo, MessageBoxImage.Warning);
@@ -211,7 +327,11 @@ namespace SystemWM.Views
 
         private async void BtnLiberarPortaRapida_Click(object sender, RoutedEventArgs e)
         {
-            if (!int.TryParse(TxtPortaRapida.Text, out int porta))
+            if (!GarantirElevacaoSeNecessaria())
+                return;
+
+            var portaTexto = TxtPortaRapida.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(portaTexto) || string.Equals(portaTexto, PlaceholderPortaRapida, StringComparison.OrdinalIgnoreCase) || !int.TryParse(portaTexto, out int porta))
             {
                 MessageBox.Show("Informe uma porta válida.", "SystemWM");
                 return;
@@ -258,9 +378,19 @@ namespace SystemWM.Views
             FiltrarPortasAtivas();
         }
 
+        private string ObterTextoBuscaSeguro()
+        {
+            var texto = TxtBusca.Text?.Trim() ?? string.Empty;
+            if (string.Equals(texto, PlaceholderBusca, StringComparison.OrdinalIgnoreCase))
+                return string.Empty;
+
+            return texto;
+        }
+
         private void BtnLimparPesquisa_Click(object sender, RoutedEventArgs e)
         {
             TxtBusca.Text = string.Empty;
+            SetPlaceholder(TxtBusca, PlaceholderBusca);
             FiltrarPortasAtivas();
         }
 
@@ -353,7 +483,7 @@ namespace SystemWM.Views
             {
                 if (_portasOriginais == null || !_portasOriginais.Any()) return;
 
-                string termo = TxtBusca.Text?.Trim() ?? string.Empty;
+                string termo = ObterTextoBuscaSeguro();
                 if (string.IsNullOrEmpty(termo))
                 {
                     ListaPortasAtivas.ItemsSource = _portasOriginais.ToList();

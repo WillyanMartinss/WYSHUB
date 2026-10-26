@@ -174,6 +174,7 @@ namespace SystemWM.Models
         public string Fabricante { get; set; } = "";
         public DateTime? DataInstalacao { get; set; }
         public double TamanhoMB { get; set; }
+        public string UninstallString { get; set; } = "";
         public bool IncluirNoRelatorio { get; set; }
     }
 

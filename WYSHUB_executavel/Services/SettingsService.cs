@@ -10,7 +10,7 @@ namespace SystemWM.Services
         public string EmailRemetente { get; set; } = "SystemWM <onboarding@resend.dev>";
         public string EmailDestinoPadrao { get; set; } = "martins.willyan20@gmail.com";
         public string EmailAssuntoPadrao { get; set; } = "Relatório de Visita Técnica - {cliente}";
-        public string EmailCorpoPadrao { get; set; } = "Olá {cliente},\n\nSegue o relatório da visita técnica em anexo.\n\nAtenciosamente,\n{tecnico}";
+        public string EmailCorpoPadrao { get; set; } = "Boa tarde,\n\nSegue o relatório em anexo.\n\nAtenciosamente,\nWillyan";
         public string NomeTecnico { get; set; } = "";
         public string NomeClientePadrao { get; set; } = "";
         public string EmpresaPadrao { get; set; } = "";
@@ -28,6 +28,7 @@ namespace SystemWM.Services
     /// </summary>
     public class SettingsService
     {
+        private static readonly object _lockArquivo = new();
         private readonly string _caminhoArquivo;
         private readonly string _caminhoArquivoApi;
 
@@ -55,13 +56,16 @@ namespace SystemWM.Services
 
         public string CarregarApiKey()
         {
-            if (!File.Exists(_caminhoArquivoApi)) return string.Empty;
-            try
+            lock (_lockArquivo)
             {
-                var apiKey = File.ReadAllText(_caminhoArquivoApi).Trim();
-                return EhChavePlaceholder(apiKey) ? string.Empty : apiKey;
+                if (!File.Exists(_caminhoArquivoApi)) return string.Empty;
+                try
+                {
+                    var apiKey = File.ReadAllText(_caminhoArquivoApi).Trim();
+                    return EhChavePlaceholder(apiKey) ? string.Empty : apiKey;
+                }
+                catch { return string.Empty; }
             }
-            catch { return string.Empty; }
         }
 
         public string ObterApiKeyVigente()
@@ -79,51 +83,60 @@ namespace SystemWM.Services
 
         public void SalvarApiKey(string apiKey)
         {
-            var valor = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
-            if (EhChavePlaceholder(valor))
-                valor = string.Empty;
+            lock (_lockArquivo)
+            {
+                var valor = string.IsNullOrWhiteSpace(apiKey) ? string.Empty : apiKey.Trim();
+                if (EhChavePlaceholder(valor))
+                    valor = string.Empty;
 
-            var pasta = Path.GetDirectoryName(_caminhoArquivoApi);
-            if (!string.IsNullOrWhiteSpace(pasta))
-                Directory.CreateDirectory(pasta);
+                var pasta = Path.GetDirectoryName(_caminhoArquivoApi);
+                if (!string.IsNullOrWhiteSpace(pasta))
+                    Directory.CreateDirectory(pasta);
 
-            File.WriteAllText(_caminhoArquivoApi, valor);
+                File.WriteAllText(_caminhoArquivoApi, valor);
+            }
         }
 
         public AppSettings Carregar()
         {
-            if (!File.Exists(_caminhoArquivo)) return new AppSettings();
-            try
+            lock (_lockArquivo)
             {
-                var json = File.ReadAllText(_caminhoArquivo);
-                var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
-                if (string.IsNullOrWhiteSpace(settings.ResendApiKey))
+                if (!File.Exists(_caminhoArquivo)) return new AppSettings();
+                try
                 {
-                    var apiKeyArquivo = CarregarApiKey();
-                    if (!string.IsNullOrWhiteSpace(apiKeyArquivo))
-                        settings.ResendApiKey = apiKeyArquivo;
-                }
+                    var json = File.ReadAllText(_caminhoArquivo);
+                    var settings = JsonSerializer.Deserialize<AppSettings>(json) ?? new AppSettings();
+                    if (string.IsNullOrWhiteSpace(settings.ResendApiKey))
+                    {
+                        var apiKeyArquivo = CarregarApiKey();
+                        if (!string.IsNullOrWhiteSpace(apiKeyArquivo))
+                            settings.ResendApiKey = apiKeyArquivo;
+                    }
 
-                return settings;
+                    return settings;
+                }
+                catch { return new AppSettings(); }
             }
-            catch { return new AppSettings(); }
         }
 
         public void Salvar(AppSettings settings)
         {
-            settings.ResendApiKey = string.IsNullOrWhiteSpace(settings.ResendApiKey)
-                ? string.Empty
-                : settings.ResendApiKey.Trim();
+            lock (_lockArquivo)
+            {
+                settings.ResendApiKey = string.IsNullOrWhiteSpace(settings.ResendApiKey)
+                    ? string.Empty
+                    : settings.ResendApiKey.Trim();
 
-            if (EhChavePlaceholder(settings.ResendApiKey))
-                settings.ResendApiKey = string.Empty;
+                if (EhChavePlaceholder(settings.ResendApiKey))
+                    settings.ResendApiKey = string.Empty;
 
-            var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(_caminhoArquivo, json);
-            if (!string.IsNullOrWhiteSpace(settings.ResendApiKey))
-                SalvarApiKey(settings.ResendApiKey);
-            else
-                SalvarApiKey(string.Empty);
+                var json = JsonSerializer.Serialize(settings, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(_caminhoArquivo, json);
+                if (!string.IsNullOrWhiteSpace(settings.ResendApiKey))
+                    SalvarApiKey(settings.ResendApiKey);
+                else
+                    SalvarApiKey(string.Empty);
+            }
         }
     }
 }

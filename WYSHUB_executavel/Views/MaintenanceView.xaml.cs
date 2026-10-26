@@ -164,6 +164,80 @@ namespace SystemWM.Views
             }
         }
 
+        private void BtnVerificarDefender_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                var executavel = string.Empty;
+                var candidatos = new[]
+                {
+                    @"C:\Program Files\Windows Defender\MpCmdRun.exe",
+                    @"C:\Program Files\Microsoft Defender\MpCmdRun.exe"
+                };
+
+                executavel = candidatos.FirstOrDefault(File.Exists) ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(executavel))
+                {
+                    MessageBox.Show("O Windows Security/Defender não foi encontrado neste computador.", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                TxtStatusLimpeza.Text = "Executando verificação rápida do Windows Security...";
+                TxtItemAtual.Text = "Aguarde enquanto o Defender realiza a varredura rápida.";
+                _logLimpeza.Add("Iniciando verificação rápida do Defender...");
+                TxtLogLimpeza.Text = string.Join(Environment.NewLine, _logLimpeza.TakeLast(8));
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = executavel,
+                    Arguments = "-Scan -ScanType 1",
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System)
+                };
+
+                using var processo = System.Diagnostics.Process.Start(psi);
+                if (processo != null)
+                {
+                    processo.WaitForExit();
+                }
+
+                TxtStatusLimpeza.Text = "Verificação rápida concluída.";
+                TxtItemAtual.Text = "A verificação do Defender foi finalizada.";
+                _logLimpeza.Add("Verificação rápida do Defender concluída.");
+                TxtLogLimpeza.Text = string.Join(Environment.NewLine, _logLimpeza.TakeLast(8));
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível iniciar a verificação do Defender:\n{ex.Message}", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
+        private void BtnAtualizarWindows_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                TxtStatusLimpeza.Text = "Abrindo a atualização do Windows...";
+                TxtItemAtual.Text = "Aguarde enquanto o Windows abre as atualizações disponíveis.";
+                _logLimpeza.Add("Abrindo atualização do Windows...");
+                TxtLogLimpeza.Text = string.Join(Environment.NewLine, _logLimpeza.TakeLast(8));
+
+                var psi = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "ms-settings:windowsupdate",
+                    UseShellExecute = true
+                };
+
+                System.Diagnostics.Process.Start(psi);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Não foi possível abrir as atualizações do Windows:\n{ex.Message}", "SystemWM", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
+
         private async void BtnLimparPastaPersonalizada_Click(object sender, RoutedEventArgs e)
         {
             using var dialog = new System.Windows.Forms.FolderBrowserDialog

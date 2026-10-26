@@ -7,7 +7,7 @@
         <!-- Para ler sensores de hardware e manter o monitoramento de temperatura
              do CPU/SSD/placa de vídeo confiável, o app pode ser executado como administrador
              quando necessário. Por padrão, abre sem elevação. -->
-        <requestedExecutionLevel level="asInvoker" uiAccess="false" />
+        <requestedExecutionLevel level="requireAdministrator" uiAccess="false" />
       </requestedPrivileges>
     </security>
   </trustInfo>

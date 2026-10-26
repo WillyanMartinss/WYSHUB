@@ -51,11 +51,32 @@
                     <TextBlock x:Name="TxtStatus" Foreground="#F8FAFC" TextWrapping="Wrap" FontWeight="SemiBold"/>
                 </Border>
 
-                <Border Style="{StaticResource CardStyle}" Background="#111827" BorderBrush="#5B8DEF" BorderThickness="1.2">
-                    <StackPanel>
-                        <TextBlock Text="Conteúdo do relatório em texto legível" Style="{StaticResource TituloCard}" Margin="0,0,0,10"/>
-                        <TextBox x:Name="TxtRelatorioPreview" Height="320" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="#0b1220" Foreground="#f8fafc" FontFamily="Segoe UI" FontSize="13" BorderBrush="#5B8DEF" BorderThickness="1.5" Padding="12"/>
-                    </StackPanel>
+                <Border Style="{StaticResource CardStyle}" Background="#111827" BorderBrush="#5B8DEF" BorderThickness="1.2" Margin="0,0,0,14">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1.05*"/>
+                            <ColumnDefinition Width="1.95*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0,0,14,0">
+                            <TextBlock Text="Programas para o relatório" Style="{StaticResource TituloCard}" Margin="0,0,0,10"/>
+                            <TextBlock Text="Selecione os programas que devem aparecer na seção de programas do relatório." Foreground="#F8FAFC" FontSize="13" Margin="0,0,0,10" TextWrapping="Wrap"/>
+                            <ListBox x:Name="ListaProgramasRelatorioSelecao" MinHeight="220" MaxHeight="320" Background="#0B1220" BorderBrush="#5B8DEF" BorderThickness="1.2" ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate>
+                                        <CheckBox Content="{Binding Nome}" IsChecked="{Binding IncluirNoRelatorio, Mode=TwoWay}" Foreground="#F8FAFC" Margin="0,2"/>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </StackPanel>
+
+                        <Border Grid.Column="1" Background="#0B1220" BorderBrush="#334155" BorderThickness="1" CornerRadius="10" Padding="12">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Conteúdo do relatório em texto legível" Style="{StaticResource TituloCard}" Margin="0,0,0,10"/>
+                                <TextBox x:Name="TxtRelatorioPreview" IsReadOnly="True" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto" Background="Transparent" Foreground="#f8fafc" FontFamily="Segoe UI" FontSize="13" BorderThickness="0" Padding="0"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
                 </Border>
             </StackPanel>
         </ScrollViewer>

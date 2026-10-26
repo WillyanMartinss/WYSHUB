@@ -6,75 +6,157 @@
   <img src="https://img.shields.io/badge/WPF-Desktop%20App-6C63FF?style=for-the-badge" alt="WPF" />
 </p>
 
-WYSHUB é um sistema desktop para suporte técnico, visitas de campo e auditoria de máquinas Windows. A versão 1.0 já reúne diagnóstico completo, controle de firewall, limpeza rápida, levantamento de programas instalados e geração de relatórios prontos para envio.
+WYSHUB é um sistema desktop para suporte técnico, análise de máquinas Windows, manutenção preventiva e geração de relatórios profissionais. Ele foi pensado para ajudar técnicos, assistentes de suporte e consultores a diagnosticar computadores de forma rápida, organizada e útil para o cliente.
 
-## ✅ O que a versão 1.0 oferece
+## ✅ Para que serve
 
-- Diagnóstico completo de hardware: CPU, RAM, SSD/HD, GPU e rede.
-- Leitura de temperatura, uso, carga e sensores quando disponíveis.
-- Ativação e desativação do firewall do Windows com gestão de regras.
-- Limpeza de arquivos temporários, cache, prefetch e lixeira.
-- Listagem de programas instalados para auditoria.
-- Geração de relatório em HTML com dados da visita.
-- Envio de relatório por e-mail via API do Resend.
-- Distribuição pronta para clientes com pasta portátil e instalador automatizado.
+O aplicativo serve para:
 
-## 🧭 Telas principais
+- diagnosticar o estado geral do computador;
+- identificar problemas de hardware, rede e desempenho;
+- verificar o status do firewall do Windows;
+- limpar arquivos temporários e dados de manutenção;
+- listar programas instalados para auditoria;
+- gerar relatórios prontos para envio por e-mail;
+- registrar informações de visitas técnicas de maneira profissional.
 
-- Dashboard: visão geral rápida do estado da máquina.
-- Hardware: informações detalhadas sobre sensores e componentes.
-- Firewall: status, regras e alterações de portas.
-- Manutenção: limpeza de arquivos e inventário de programas.
-- Relatórios: geração do documento final da visita.
-- Configurações: API Key do Resend, remetente e dados do técnico.
+Em resumo, o programa ajuda a transformar uma visita de suporte em um processo organizado, com dados claros, documentação e ações práticas.
 
-## ⚙️ Requisitos
+## ⚙️ Como ele funciona
 
-- Windows 10 ou 11.
-- Permissão de Administrador para algumas funções, como sensores, limpeza e firewall.
-- Conta no Resend para envio de e-mail (opcional, se o usuário quiser utilizar essa função).
+O fluxo do WYSHUB é simples:
+
+1. O sistema coleta informações da máquina.
+2. Organiza os dados em um painel rápido e visual.
+3. Permite executar ações de manutenção e verificação.
+4. Gera um relatório profissional com os resultados.
+5. Envia o documento por e-mail para o cliente ou equipe responsável.
+
+Esse processo economiza tempo e deixa o atendimento técnico muito mais eficiente.
+
+---
+
+## 🖥️ Tela inicial
+
+A tela inicial funciona como painel central do sistema. Ela oferece uma visão geral do computador e facilita a identificação rápida de problemas e condições gerais de uso.
+
+![Tela inicial](IMAGENS/tela%20inicial.jpg)
+
+### O que ela mostra
+
+- status geral da máquina;
+- informações de hardware e desempenho;
+- indicadores de temperatura, uso e estado do sistema;
+- acesso rápido às principais funções do app.
+
+### Para que serve
+
+Essa tela é a porta de entrada do programa. Ela ajuda o técnico a ver imediatamente se a máquina está em bom estado ou se precisa de atenção antes de continuar com a análise.
+
+---
+
+## 🧹 Limpeza e manutenção
+
+A funcionalidade de limpeza ajuda a remover arquivos temporários, cache, registros de uso e itens que podem deixar o sistema mais lento ou desorganizado.
+
+![Limpeza e manutenção](IMAGENS/Tela_limpeza.jpg)
+
+### Como funciona
+
+- o usuário acessa a área de manutenção;
+- o programa identifica arquivos que podem ser removidos com segurança;
+- ele permite limpar temporários, cache e dados de uso do sistema;
+- o técnico pode concluir uma ação de manutenção sem depender de vários programas externos.
+
+### Para que serve
+
+Essa seção é útil para aumentar o desempenho do computador, reduzir lixo digital e preparar o equipamento para uma nova etapa de uso ou diagnóstico.
+
+---
+
+## 📄 Geração de relatórios
+
+A parte de geração de relatórios transforma os dados coletados em um documento profissional para o cliente ou gestor.
+
+![Gerar relatórios](IMAGENS/tela_gerarRelatorios.jpg)
+
+### Como funciona
+
+- coleta as informações verificadas no sistema;
+- organiza os dados em um formato de relatório;
+- exporta o conteúdo em arquivo pronto para uso;
+- facilita a comunicação entre a equipe técnica e o cliente.
+
+### Para que serve
+
+Essa funcionalidade é importante para registrar o atendimento, documentar o diagnóstico e criar um histórico profissional de inspeção e manutenção do equipamento.
+
+---
+
+## 📧 Envio de e-mail
+
+A área de e-mail permite que o relatório seja enviado de forma direta e prática para o destinatário correto.
+
+![E-mail](IMAGENS/tela_email.jpg)
+
+### Como funciona
+
+- o técnico preenche ou confirma os dados do remetente e do destinatário;
+- o sistema prepara o relatório para envio;
+- a mensagem é enviada pela integração com a API de e-mail configurada no app.
+
+### Para que serve
+
+Essa etapa agiliza a comunicação com clientes e equipes internas, permitindo que o diagnóstico chegue rapidamente ao responsável pela decisão ou manutenção.
+
+---
+
+## 🧭 Resumo do uso do sistema
+
+O WYSHUB é útil em cenários como:
+
+- suporte técnico em empresas;
+- manutenção de computadores em campo;
+- visita técnica para diagnóstico rápido;
+- auditoria de hardware e software;
+- atendimento profissional com documentação.
+
+Ele combina diagnóstico, limpeza, controle e relatório em um único ambiente, reduzindo a necessidade de usar várias ferramentas separadas.
+
+---
+
+## 🛠️ Tecnologias e arquitetura
+
+O projeto foi desenvolvido com:
+
+- .NET 8
+- WPF para interface desktop
+- Windows APIs para diagnóstico e manutenção
+- integração com envio de e-mail
+- distribuição pronta em versão portátil e instalador
+
+---
 
 ## 🚀 Como usar
 
-### Opção 1: instalar no computador do cliente
-1. Baixe o pacote [instaladores/setup.zip](instaladores/setup.zip).
-2. Extraia a pasta.
-3. Execute [instaladores/setup/install.ps1](instaladores/setup/install.ps1) como administrador.
-4. O programa será instalado em C:\Program Files\WYSHUB e terá atalhos na área de trabalho e no menu Iniciar.
+### Opção 1: versão portátil
 
-### Opção 2: versão portátil
-1. Use a pasta [instaladores/WYSHUB_Portavel](instaladores/WYSHUB_Portavel).
-2. Execute o arquivo WYSHUB.exe diretamente.
-3. Se o Windows pedir elevação, aceite. Isso é necessário para partes do sistema.
+1. baixe a pasta de release;
+2. extraia o conteúdo em qualquer local do computador;
+3. execute o arquivo WYSHUB.exe;
+4. siga as telas do sistema e gere o relatório necessário.
 
-## 🧰 Estrutura de distribuição
+### Opção 2: versão instalada
 
-- [instaladores/WYSHUB_Portavel](instaladores/WYSHUB_Portavel): pacote portátil com o executável, DLLs e dependências.
-- [instaladores/setup](instaladores/setup): scripts de instalação com atalhos para Windows.
-- [installer](installer): pacote adicional de distribuição.
+1. baixe o instalador do sistema;
+2. execute o arquivo de instalação;
+3. confirme os passos do assistente;
+4. use o programa normalmente.
 
-## 🛠️ Desenvolvimento
+---
 
-Para abrir o projeto no Visual Studio:
-1. Abra [SystemWM.sln](SystemWM.sln).
-2. Restaure os pacotes NuGet.
-3. Execute o projeto no modo Debug.
+## 📌 Conclusão
 
-Para gerar a build localmente:
-```bash
-dotnet publish -c Release -r win-x64 --self-contained true -p:PublishSingleFile=false
-```
+O WYSHUB foi criado para facilitar o trabalho técnico, melhorar a organização do atendimento e entregar relatórios claros e profissionais. Ele funciona como uma ferramenta completa para diagnóstico, manutenção e documentação de máquinas Windows.
 
-## 📝 Observações importantes
-
-- Algumas funções dependem de permissões administrativas do Windows.
-- A leitura de sensores pode variar conforme hardware, drivers e compatibilidade do equipamento.
-- O projeto usa LibreHardwareMonitorLib para sensores e netsh para regras do firewall.
-
-## 🌐 Documentação
-
-A documentação visual está em [docs/index.html](docs/index.html).
-
-## 📦 Versão 1.0
-
-Esta versão foi preparada para uso real, com distribuição para clientes, instalação simplificada e materiais prontos para teste e validação.
+Seja para suporte interno, atendimento ao cliente ou inspeção técnica, o sistema ajuda a transformar uma análise simples em um processo eficiente e confiável.

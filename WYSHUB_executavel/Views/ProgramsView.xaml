@@ -53,7 +53,12 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Border x:Name="CardPrograma" BorderBrush="{StaticResource BorderCard}" BorderThickness="1" CornerRadius="10" Background="#111827" Padding="10" Margin="0,0,8,8" Width="250">
+                                        <Border x:Name="CardPrograma" BorderBrush="{StaticResource BorderCard}" BorderThickness="1" CornerRadius="10" Background="#111827" Padding="10" Margin="0,0,8,8" Width="250" Tag="{Binding}">
+                                            <Border.ContextMenu>
+                                                <ContextMenu>
+                                                    <MenuItem Header="Desinstalar programa" Click="DesinstalarPrograma_Click" CommandParameter="{Binding PlacementTarget.Tag, RelativeSource={RelativeSource AncestorType=ContextMenu}}"/>
+                                                </ContextMenu>
+                                            </Border.ContextMenu>
                                             <Border.Style>
                                                 <Style TargetType="Border">
                                                     <Setter Property="Background" Value="#111827"/>

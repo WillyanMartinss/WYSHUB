@@ -298,10 +298,14 @@ namespace SystemWM.Services
                 var totalItens = limpezaResultado.Count;
                 var totalRecuperado = limpezaResultado.Values.Sum();
                 sb.AppendLine(new string('=', 50));
-                sb.AppendLine("Resumo da Limpeza");
+                sb.AppendLine("Limpeza realizada");
                 sb.AppendLine($"Itens processados: {totalItens}");
                 sb.AppendLine($"Espaço recuperado: {totalRecuperado:0.##} GB");
                 sb.AppendLine($"Status geral: OK");
+                foreach (var (item, recuperado) in limpezaResultado)
+                {
+                    sb.AppendLine($"  • {item}: {recuperado:0.##} GB");
+                }
                 sb.AppendLine(new string('=', 50));
                 sb.AppendLine("APLICATIVOS SELECIONADOS");
                 var programasParaRelatorio = programas.Where(p => p.IncluirNoRelatorio).ToList();
@@ -325,6 +329,13 @@ namespace SystemWM.Services
                 {
                     sb.AppendLine($"  • {p.Nome}");
                 }
+            }
+
+            if (!algumaSecaoSelecionada && (limpezaResultado == null || !limpezaResultado.Any()))
+            {
+                sb.AppendLine(new string('=', 50));
+                sb.AppendLine("SEÇÕES SELECIONADAS");
+                sb.AppendLine("Nenhuma seção foi selecionada para este relatório.");
             }
 
             if (!string.IsNullOrWhiteSpace(cliente.Observacoes))

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Windows.Media;
@@ -19,22 +20,32 @@ namespace SystemWM.Services
             {
                 new() { Nome = "Arquivos temporários do usuário", CaminhoTipo = "TempUser",
                         Descricao = "%TEMP% - arquivos temporários gerados por programas do usuário atual",
-                        NivelAlerta = NivelAlertaLimpeza.Verde },
+                        NivelAlerta = NivelAlertaLimpeza.Verde,
+                        Selecionado = true },
                 new() { Nome = "Arquivos temporários do Windows", CaminhoTipo = "TempWindows",
                         Descricao = "C:\\Windows\\Temp - arquivos temporários do sistema",
-                        NivelAlerta = NivelAlertaLimpeza.Amarelo },
+                        NivelAlerta = NivelAlertaLimpeza.Amarelo,
+                        Selecionado = false },
                 new() { Nome = "Cache do Windows Update", CaminhoTipo = "CacheWindowsUpdate",
                         Descricao = "C:\\Windows\\SoftwareDistribution\\Download - pacotes de atualização já instalados",
-                        NivelAlerta = NivelAlertaLimpeza.Amarelo },
+                        NivelAlerta = NivelAlertaLimpeza.Amarelo,
+                        Selecionado = false },
                 new() { Nome = "Cache de Prefetch", CaminhoTipo = "PrefetchCache",
                         Descricao = "C:\\Windows\\Prefetch - cache de inicialização de programas",
-                        NivelAlerta = NivelAlertaLimpeza.Amarelo },
+                        NivelAlerta = NivelAlertaLimpeza.Amarelo,
+                        Selecionado = false },
                 new() { Nome = "Lixeira", CaminhoTipo = "Lixeira",
                         Descricao = "Esvaziar a Lixeira do Windows (todos os discos)",
-                        NivelAlerta = NivelAlertaLimpeza.Vermelho },
+                        NivelAlerta = NivelAlertaLimpeza.Vermelho,
+                        Selecionado = false },
+                new() { Nome = "Verificação de vírus (Windows Security)", CaminhoTipo = "WindowsSecurityScan",
+                        Descricao = "Executa uma verificação rápida de ameaças com o mecanismo padrão do Windows Security/Defender.",
+                        NivelAlerta = NivelAlertaLimpeza.Amarelo,
+                        Selecionado = false },
                 new() { Nome = "Pasta personalizada", CaminhoTipo = "Personalizada",
                         Descricao = "Limpar uma pasta de sua escolha. Defina o caminho antes de executar.",
-                        NivelAlerta = NivelAlertaLimpeza.Amarelo },
+                        NivelAlerta = NivelAlertaLimpeza.Amarelo,
+                        Selecionado = false },
             };
 
             foreach (var item in itens)
@@ -58,7 +69,7 @@ namespace SystemWM.Services
                             CaminhoPersonalizado = pasta,
                             Descricao = $"Pasta personalizada: {pasta}",
                             NivelAlerta = NivelAlertaLimpeza.Amarelo,
-                            Selecionado = true
+                            Selecionado = false
                         };
                         personalizado.AtualizarCores();
                         personalizado.TamanhoEstimadoMB = Math.Round(CalcularTamanhoMB(personalizado), 1);
@@ -127,6 +138,11 @@ namespace SystemWM.Services
                 {
                     liberadoMB = EsvaziarLixeira();
                 }
+                else if (item.CaminhoTipo == "WindowsSecurityScan")
+                {
+                    progresso?.Report((indice, $"Executando verificação de vírus: {item.Nome}"));
+                    liberadoMB = ExecutarVerificacaoVirusWindows();
+                }
                 else if (item.CaminhoTipo == "Personalizada")
                 {
                     if (!string.IsNullOrWhiteSpace(item.CaminhoPersonalizado))
@@ -144,6 +160,57 @@ namespace SystemWM.Services
 
             progresso?.Report((100, "Limpeza concluída."));
             return resultado;
+        }
+
+        private double ExecutarVerificacaoVirusWindows()
+        {
+            var candidatos = new[]
+            {
+                @"C:\Program Files\Windows Defender\MpCmdRun.exe",
+                @"C:\Program Files\Microsoft Defender\MpCmdRun.exe"
+            };
+
+            var executavel = candidatos.FirstOrDefault(File.Exists);
+            if (string.IsNullOrWhiteSpace(executavel))
+            {
+                try
+                {
+                    Process.Start(new ProcessStartInfo("windowsdefender:")
+                    {
+                        UseShellExecute = true
+                    });
+                }
+                catch { }
+
+                return 0;
+            }
+
+            try
+            {
+                using var processo = new Process
+                {
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = executavel,
+                        Arguments = "-Scan -ScanType 1",
+                        UseShellExecute = false,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                        CreateNoWindow = true,
+                        WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System)
+                    }
+                };
+
+                processo.Start();
+                processo.StandardOutput.ReadToEnd();
+                processo.StandardError.ReadToEnd();
+                processo.WaitForExit();
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
         }
 
         private double LimparPasta(string caminho, string? pastaBackup)

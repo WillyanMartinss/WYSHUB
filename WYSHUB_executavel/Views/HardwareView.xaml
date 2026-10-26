@@ -75,21 +75,23 @@
                             <StackPanel Margin="0,12,0,0">
                                 <TextBlock Text="Clique com o botão direito em um dispositivo para abrir o Gerenciador de Dispositivos." Style="{StaticResource LabelSecundario}" Foreground="{StaticResource TextoPrimario}" TextWrapping="Wrap"/>
                                 <Button Content="Abrir Gerenciador de Dispositivos" Style="{StaticResource BotaoSecundario}" Click="BtnAbrirGerenciador_Click" Margin="0,12,0,0" Width="220" HorizontalAlignment="Left"/>
-                                <ListView x:Name="ListaDispositivos" Margin="0,12,0,0" ItemTemplate="{StaticResource HardwareDeviceTemplate}" Background="Transparent" BorderThickness="0">
-                                    <ListView.ItemContainerStyle>
-                                        <Style TargetType="ListViewItem">
-                                            <Setter Property="ContextMenu">
-                                                <Setter.Value>
-                                                    <ContextMenu>
-                                                        <MenuItem Header="Ir para Gerenciamento de Dispositivos" Click="MenuItemAbrirGerenciador_Click"/>
-                                                    </ContextMenu>
-                                                </Setter.Value>
-                                            </Setter>
-                                            <Setter Property="Padding" Value="0"/>
-                                            <Setter Property="Margin" Value="0,4,0,4"/>
-                                        </Style>
-                                    </ListView.ItemContainerStyle>
-                                </ListView>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" MaxHeight="420" Margin="0,12,0,0">
+                                    <ListView x:Name="ListaDispositivos" ItemTemplate="{StaticResource HardwareDeviceTemplate}" Background="Transparent" BorderThickness="0" ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="ContextMenu">
+                                                    <Setter.Value>
+                                                        <ContextMenu>
+                                                            <MenuItem Header="Ir para Gerenciamento de Dispositivos" Click="MenuItemAbrirGerenciador_Click"/>
+                                                        </ContextMenu>
+                                                    </Setter.Value>
+                                                </Setter>
+                                                <Setter Property="Padding" Value="0"/>
+                                                <Setter Property="Margin" Value="0,4,0,4"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                    </ListView>
+                                </ScrollViewer>
                             </StackPanel>
                         </Expander>
                     </StackPanel>

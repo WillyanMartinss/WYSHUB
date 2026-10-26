@@ -1,0 +1,13 @@
+WYSHUB
+
+Aplicativo desktop para suporte técnico e visitas de campo.
+
+Instalação:
+1. Extraia a pasta para o computador do cliente.
+2. Execute WYSHUB.exe.
+3. Se o Windows mostrar "App não é confiável", clique em Mais informações e depois em Executar mesmo assim.
+4. O app pode solicitar permissão de Administrador para funções de firewall e sensores.
+
+Observações:
+- O programa foi publicado em modo self-contained para reduzir dependências.
+- Para reduzir bloqueios do Defender, recomende instalar em C:\Program Files\WYSHUB.

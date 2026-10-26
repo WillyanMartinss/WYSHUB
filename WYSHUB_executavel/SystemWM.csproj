@@ -33,6 +33,10 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
     </Content>
 
+    <EmbeddedResource Include="..\scripts\setup-wizard.ps1">
+      <Link>scripts\setup-wizard.ps1</Link>
+    </EmbeddedResource>
+
     <Content Include="..\requirements.txt">
       <Link>requirements.txt</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

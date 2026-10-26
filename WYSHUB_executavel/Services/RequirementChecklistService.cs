@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -15,29 +16,186 @@ namespace SystemWM.Services
         Optional
     }
 
-    public sealed class RequirementChecklistItem
+    public sealed class RequirementChecklistItem : INotifyPropertyChanged
     {
+        private RequirementStatus _status;
+        private string _detail = string.Empty;
+        private string _currentState = string.Empty;
+        private bool _isCompleted;
+        private string _downloadUrl = string.Empty;
+
         public string Name { get; set; } = string.Empty;
         public bool IsOptional { get; set; }
-        public RequirementStatus Status { get; set; }
-        public string Detail { get; set; } = string.Empty;
+        public RequirementStatus Status
+        {
+            get => _status;
+            set
+            {
+                if (_status == value) return;
+                _status = value;
+                OnPropertyChanged(nameof(Status));
+                OnPropertyChanged(nameof(IsSatisfied));
+                OnPropertyChanged(nameof(HasDownloadLink));
+            }
+        }
+        public string Detail
+        {
+            get => _detail;
+            set
+            {
+                if (_detail == value) return;
+                _detail = value;
+                OnPropertyChanged(nameof(Detail));
+            }
+        }
         public string InstallHint { get; set; } = string.Empty;
+        public string DownloadUrl
+        {
+            get => _downloadUrl;
+            set
+            {
+                if (_downloadUrl == value) return;
+                _downloadUrl = value;
+                OnPropertyChanged(nameof(DownloadUrl));
+                OnPropertyChanged(nameof(HasDownloadLink));
+            }
+        }
+        public bool IsSatisfied => Status == RequirementStatus.Installed;
+        public bool HasDownloadLink => !string.IsNullOrWhiteSpace(DownloadUrl) && !IsSatisfied;
+        public string CurrentState
+        {
+            get => _currentState;
+            set
+            {
+                if (_currentState == value) return;
+                _currentState = value;
+                OnPropertyChanged(nameof(CurrentState));
+            }
+        }
+        public bool IsCompleted
+        {
+            get => _isCompleted;
+            set
+            {
+                if (_isCompleted == value) return;
+                _isCompleted = value;
+                OnPropertyChanged(nameof(IsCompleted));
+            }
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        public void UpdateState(RequirementStatus status, string currentState)
+        {
+            Status = status;
+            CurrentState = currentState;
+        }
+
+        public void MarkCompleted()
+        {
+            IsCompleted = true;
+        }
+
+        private void OnPropertyChanged(string propertyName) => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     public static class RequirementChecklistService
     {
         public static List<RequirementChecklistItem> GetChecklist(string? baseDirectory = null)
         {
-            var requirementsPath = ResolveRequirementsPath(baseDirectory);
-            var items = ParseRequirementsFile(requirementsPath);
+            var items = new List<RequirementChecklistItem>();
+            items.AddRange(GetOfflineInstallerChecklistItems(baseDirectory));
 
-            foreach (var item in items)
+            var requirementsPath = ResolveRequirementsPath(baseDirectory);
+            var requirementsItems = ParseRequirementsFile(requirementsPath);
+
+            foreach (var item in requirementsItems)
             {
                 item.Status = EvalStatus(item.Name);
                 item.Detail = BuildDetail(item.Name, item.Status);
+                items.Add(item);
             }
 
             return items;
+        }
+
+        public static string? ResolveOfflinePackagesPath(string? baseDirectory = null)
+        {
+            var folderNames = new[] { "dependencias_offline", "dependencias" };
+            var searchRoots = new List<string>();
+
+            if (!string.IsNullOrWhiteSpace(baseDirectory))
+            {
+                searchRoots.Add(Path.GetFullPath(baseDirectory));
+            }
+
+            searchRoots.Add(Path.GetFullPath(Directory.GetCurrentDirectory()));
+            searchRoots.Add(Path.GetFullPath(AppDomain.CurrentDomain.BaseDirectory));
+
+            var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var searchRoot in searchRoots.Distinct(StringComparer.OrdinalIgnoreCase))
+            {
+                var current = searchRoot;
+
+                while (!string.IsNullOrWhiteSpace(current))
+                {
+                    if (visited.Add(current))
+                    {
+                        foreach (var folderName in folderNames)
+                        {
+                            var candidate = Path.Combine(current, folderName);
+                            if (Directory.Exists(candidate))
+                            {
+                                return candidate;
+                            }
+                        }
+                    }
+
+                    current = Directory.GetParent(current)?.FullName;
+                }
+            }
+
+            return null;
+        }
+
+        public static List<string> GetOfflineInstallerFiles(string? baseDirectory = null)
+        {
+            var offlineFolder = ResolveOfflinePackagesPath(baseDirectory);
+            if (string.IsNullOrWhiteSpace(offlineFolder) || !Directory.Exists(offlineFolder))
+            {
+                return new List<string>();
+            }
+
+            var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ".exe",
+                ".msi",
+                ".msu",
+                ".bat",
+                ".cmd",
+                ".ps1"
+            };
+
+            return Directory.GetFiles(offlineFolder, "*", SearchOption.AllDirectories)
+                .Where(path => allowedExtensions.Contains(Path.GetExtension(path)))
+                .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+                .ToList();
+        }
+
+        public static List<RequirementChecklistItem> GetOfflineInstallerChecklistItems(string? baseDirectory = null)
+        {
+            return GetOfflineInstallerFiles(baseDirectory)
+                .Select(path => new RequirementChecklistItem
+                {
+                    Name = $"Instalador local: {Path.GetFileName(path)}",
+                    Status = RequirementStatus.Missing,
+                    Detail = "Instalador encontrado na pasta de dependências. O assistente verificará e instalará se ainda não estiver presente.",
+                    CurrentState = "Pendente de verificação.",
+                    InstallHint = "Executar o instalador localizado na pasta local.",
+                    IsOptional = false
+                })
+                .ToList();
         }
 
         public static string ResolveRequirementsPath(string? baseDirectory = null)
@@ -108,7 +266,8 @@ namespace SystemWM.Services
                         Name = name,
                         IsOptional = inOptionalSection,
                         Status = RequirementStatus.Warning,
-                        InstallHint = BuildInstallHint(name)
+                        InstallHint = BuildInstallHint(name),
+                        DownloadUrl = BuildDownloadUrl(name)
                     });
                     continue;
                 }
@@ -122,7 +281,8 @@ namespace SystemWM.Services
                             Name = line,
                             IsOptional = inOptionalSection,
                             Status = RequirementStatus.Warning,
-                            InstallHint = BuildInstallHint(line)
+                            InstallHint = BuildInstallHint(line),
+                            DownloadUrl = BuildDownloadUrl(line)
                         });
                     }
                 }
@@ -189,6 +349,17 @@ namespace SystemWM.Services
                 return "Habilitar o Firewall do Windows para os perfis necessário.";
 
             return "Usar o instalador oficial ou o pacote recomendado pela Microsoft.";
+        }
+
+        private static string BuildDownloadUrl(string name)
+        {
+            if (name.Contains(".NET 8", StringComparison.OrdinalIgnoreCase))
+                return "https://dotnet.microsoft.com/pt-br/download/dotnet/thank-you/runtime-desktop-8.0-windows-x64-installer";
+
+            if (name.Contains("Visual C++", StringComparison.OrdinalIgnoreCase))
+                return "https://learn.microsoft.com/cpp/windows/latest-supported-vc-redist?view=msvc-170";
+
+            return string.Empty;
         }
 
         private static bool IsWindowsSupported()

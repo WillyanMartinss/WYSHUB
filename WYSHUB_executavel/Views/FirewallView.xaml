@@ -2,6 +2,31 @@
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <UserControl.Resources>
+        <Style x:Key="CampoModernizado" TargetType="TextBox">
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="BorderBrush" Value="#334155"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Background" Value="#0F172A"/>
+            <Setter Property="Foreground" Value="{StaticResource TextoPrimario}"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="Bd" CornerRadius="12" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" BorderThickness="{TemplateBinding BorderThickness}">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="#60A5FA"/>
+                                <Setter TargetName="Bd" Property="Background" Value="#111827"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <Style x:Key="FiltroDirecaoToggle" TargetType="ToggleButton">
             <Setter Property="Foreground" Value="#E2E8F0"/>
             <Setter Property="Background" Value="#111827"/>
@@ -57,7 +82,9 @@
                 </StackPanel>
 
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,16" VerticalAlignment="Center">
-                    <TextBox x:Name="TxtPortaRapida" Width="100" Margin="0,0,8,0" ToolTip="Informe a porta" Foreground="{StaticResource TextoPrimario}" Background="{StaticResource BgCard}"/>
+                    <Border CornerRadius="12" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" Padding="4" Margin="0,0,8,0">
+                        <TextBox x:Name="TxtPortaRapida" Width="150" ToolTip="Digite a porta para liberar" FontSize="14" Style="{StaticResource CampoModernizado}" Text="" GotFocus="TextBoxPlaceholder_GotFocus" LostFocus="TextBoxPlaceholder_LostFocus"/>
+                    </Border>
                     <Border CornerRadius="999" Background="#111827" BorderBrush="#24314D" BorderThickness="1" Padding="4" Margin="0,0,8,0">
                         <StackPanel Orientation="Horizontal">
                             <ToggleButton x:Name="BtnFiltroSaida" Content="Saída" Width="90" Height="34" Margin="0,0,4,0" Style="{StaticResource FiltroDirecaoToggle}" Click="BtnFiltroDirecao_Click" Tag="Saída" IsChecked="True"/>
@@ -80,8 +107,16 @@
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="Buscar porta/app/ip:" Foreground="{StaticResource TextoSecundario}" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                        <TextBox x:Name="TxtBusca" Width="180" Margin="0,0,8,0" TextChanged="TxtBusca_TextChanged" ToolTip="Pesquisar por porta, IP ou nome do aplicativo" Foreground="{StaticResource TextoPrimario}" Background="{StaticResource BgCard}"/>
+                        <Border CornerRadius="12" Background="#0F172A" BorderBrush="#334155" BorderThickness="1" Padding="4" Margin="0,0,8,0">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBlock Text="🔎" FontSize="14" VerticalAlignment="Center" Margin="8,0,8,0"/>
+                                <TextBox x:Name="TxtBusca" Grid.Column="1" Width="280" Height="32" TextChanged="TxtBusca_TextChanged" ToolTip="Pesquisar por porta, IP ou nome do aplicativo" FontSize="14" Style="{StaticResource CampoModernizado}" BorderThickness="0" Background="Transparent" Padding="0" Text="" GotFocus="TextBoxPlaceholder_GotFocus" LostFocus="TextBoxPlaceholder_LostFocus"/>
+                            </Grid>
+                        </Border>
                         <Button Content="Limpar" Style="{StaticResource BotaoSecundario}" Click="BtnLimparPesquisa_Click" Width="100"/>
                     </StackPanel>
                 </Grid>

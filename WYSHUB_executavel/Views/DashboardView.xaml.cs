@@ -58,6 +58,20 @@ namespace SystemWM.Views
             }
         }
 
+        public static double ObterTemperaturaExibicao(CpuInfo cpu, int indice)
+        {
+            if (cpu is null)
+                return 0;
+
+            if (indice < 0)
+                indice = 0;
+
+            if (cpu.TemperaturaPorNucleo.Count > indice && cpu.TemperaturaPorNucleo[indice] > 0)
+                return cpu.TemperaturaPorNucleo[indice];
+
+            return cpu.TemperaturaC > 0 ? cpu.TemperaturaC : 0;
+        }
+
         private void PreencherCpu(CpuInfo cpu)
         {
             TxtCpuNome.Text = cpu.Nome;
@@ -74,7 +88,7 @@ namespace SystemWM.Views
 
             var indice = Math.Min(_indiceCpuExibido, totalNucleos - 1);
             var usoNucleo = cpu.CargaPorNucleo.Count > indice ? cpu.CargaPorNucleo[indice] : cpu.UsoAtualPercent;
-            var tempNucleo = cpu.TemperaturaPorNucleo.Count > indice ? cpu.TemperaturaPorNucleo[indice] : cpu.TemperaturaC;
+            var tempNucleo = ObterTemperaturaExibicao(cpu, indice);
 
             TxtCpuUso.Text = usoNucleo > 0 ? $"{usoNucleo:0}%" : "N/D";
             TxtCpuFreq.Text = totalNucleos > 1
@@ -89,7 +103,7 @@ namespace SystemWM.Views
             AtualizarIndicadorPontos(IndicadorCpu, totalNucleos, _indiceCpuExibido);
 
             AtualizarRing(CpuRing, TxtCpuRing, Math.Max(0, cpu.UsoAtualPercent), 84d, 10d);
-            AtualizarTempRing(CpuTempRing, TxtCpuTempRing, Math.Max(0, cpu.TemperaturaC), 95, 64d, 8d);
+            AtualizarTempRing(CpuTempRing, TxtCpuTempRing, Math.Max(0, tempNucleo), 95, 64d, 8d);
         }
 
         private void PreencherRam(RamInfo ram)
@@ -135,7 +149,7 @@ namespace SystemWM.Views
                 ? $"Temp: {dAtual.TemperaturaC:0}°C  |  {dAtual.Interface}"
                 : $"Temp: N/D  |  {dAtual.Interface}";
             TxtDiscoSaude.Text = string.IsNullOrWhiteSpace(dAtual.SaudePercentTexto)
-                ? "Saúde: N/D"
+                ? "Saúde: Saudável"
                 : $"Saúde: {dAtual.SaudePercentTexto}";
 
             IndicadorDisco.Visibility = lista.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
@@ -337,10 +351,29 @@ namespace SystemWM.Views
                 if (border == null) continue;
 
                 var selecionado = AppState.DashboardCardsSelecionados.Contains(border.Name);
-                border.BorderBrush = selecionado ? new SolidColorBrush(Colors.LimeGreen) : new SolidColorBrush(Color.FromRgb(63, 87, 126));
-                border.BorderThickness = selecionado ? new Thickness(2) : new Thickness(1);
+                var brushPadrao = (Brush)FindResource("BorderCard");
+                var brushSelecionado = new SolidColorBrush(Color.FromRgb(90, 180, 140));
+
+                border.BorderBrush = selecionado ? brushSelecionado : brushPadrao;
+                border.BorderThickness = selecionado ? new Thickness(1.5) : new Thickness(1);
                 border.Padding = selecionado ? new Thickness(2) : new Thickness(0);
-                border.Background = selecionado ? new SolidColorBrush(Color.FromRgb(16, 28, 43)) : new SolidColorBrush(Color.FromRgb(16, 25, 37));
+                border.Background = selecionado
+                    ? new SolidColorBrush(Color.FromRgb(21, 32, 45))
+                    : new SolidColorBrush(Color.FromRgb(16, 25, 37));
+                border.Opacity = selecionado ? 1 : 0.96;
+                border.Cursor = System.Windows.Input.Cursors.Hand;
+                border.Effect = selecionado
+                    ? new System.Windows.Media.Effects.DropShadowEffect
+                    {
+                        BlurRadius = 10,
+                        ShadowDepth = 0,
+                        Opacity = 0.22,
+                        Color = Color.FromRgb(92, 182, 140)
+                    }
+                    : null;
+                border.ToolTip = selecionado
+                    ? "Card incluído no relatório"
+                    : "Clique para incluir no relatório";
             }
         }
 
@@ -404,9 +437,9 @@ namespace SystemWM.Views
 
         private void PreencherSistema(SistemaInfo sis)
         {
-            TxtSisHost.Text = $"Host: {sis.NomeHost}  |  Usuário: {sis.Usuario}";
-            TxtSisBios.Text = $"SO: {sis.SistemaOperacional}  |  {sis.Arquitetura}";
-            TxtSisUptime.Text = $"Uptime: {sis.Uptime}";
+            TxtSisHost.Text = $"Host: {sis.NomeHost}";
+            TxtSisBios.Text = $"Usuário: {sis.Usuario}  |  BIOS: {sis.BiosVersao}";
+            TxtSisUptime.Text = $"SO: {sis.SistemaOperacional} ({sis.Arquitetura})  |  Uptime: {sis.Uptime}";
 
             TxtRede.Text = $"Rede: {(string.IsNullOrEmpty(sis.RedeStatus) ? "Conectado" : sis.RedeStatus)}";
             TxtIpLocal.Text = $"IP Local: {sis.IpLocal}";

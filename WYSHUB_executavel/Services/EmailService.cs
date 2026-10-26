@@ -17,6 +17,23 @@ namespace SystemWM.Services
     {
         private const string ResendEndpoint = "https://api.resend.com/emails";
 
+        public static (string remetente, string destinatario, string assunto, string? cc) NormalizarDadosEnvio(
+            string? remetente,
+            string? destinatario,
+            string? assunto,
+            string? cc,
+            string fallbackRemetente,
+            string fallbackDestinatario,
+            string fallbackAssunto)
+        {
+            var remetenteFinal = string.IsNullOrWhiteSpace(remetente) ? fallbackRemetente : remetente.Trim();
+            var destinatarioFinal = string.IsNullOrWhiteSpace(destinatario) ? fallbackDestinatario : destinatario.Trim();
+            var assuntoFinal = string.IsNullOrWhiteSpace(assunto) ? fallbackAssunto : assunto.Trim();
+            var ccFinal = string.IsNullOrWhiteSpace(cc) ? null : cc.Trim();
+
+            return (remetenteFinal, destinatarioFinal, assuntoFinal, ccFinal);
+        }
+
         public string AplicarTemplateEmail(string template, string cliente, string empresa, string tecnico, string data, string? relatorio = null)
         {
             if (string.IsNullOrWhiteSpace(template))
@@ -34,6 +51,39 @@ namespace SystemWM.Services
             return texto;
         }
 
+        public static string ConstruirCorpoMensagem(string? corpoInformado, string? corpoPadrao, string? relatorioConteudo = null)
+        {
+            const string mensagemPadrao = "Boa tarde,\n\nSegue o relatório em anexo.\n\nAtenciosamente,\nWillyan";
+            var corpoBase = string.IsNullOrWhiteSpace(corpoInformado) ? corpoPadrao : corpoInformado;
+            var textoRelatorio = string.IsNullOrWhiteSpace(relatorioConteudo) ? string.Empty : relatorioConteudo.Trim();
+
+            if (!string.IsNullOrWhiteSpace(textoRelatorio) &&
+                (EhConteudoRelatorio(corpoBase, textoRelatorio) || EhConteudoRelatorio(corpoPadrao, textoRelatorio)))
+            {
+                return mensagemPadrao;
+            }
+
+            if (string.IsNullOrWhiteSpace(corpoBase))
+                return mensagemPadrao;
+
+            return corpoBase;
+        }
+
+        private static bool EhConteudoRelatorio(string? texto, string textoRelatorio)
+        {
+            if (string.IsNullOrWhiteSpace(texto))
+                return false;
+
+            var textoNormalizado = texto.Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Trim();
+            var relatorioNormalizado = textoRelatorio.Replace("\r\n", "\n", StringComparison.Ordinal)
+                .Replace('\r', '\n')
+                .Trim();
+
+            return string.Equals(textoNormalizado, relatorioNormalizado, StringComparison.Ordinal);
+        }
+
         public async Task<(bool sucesso, string mensagem)> EnviarRelatorioAsync(
             string apiKey, string remetente, string destinatario, string assunto,
             string? corpoHtml = null, string? corpoTexto = null, string? cc = null,
@@ -49,6 +99,7 @@ namespace SystemWM.Services
             {
                 using var client = new HttpClient();
                 client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
+                client.DefaultRequestHeaders.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/json"));
 
                 var payload = new Dictionary<string, object?>
                 {

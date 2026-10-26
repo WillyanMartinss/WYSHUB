@@ -33,7 +33,7 @@ namespace SystemWM.Views
                 TxtRemetente.Text = s.EmailRemetente;
                 TxtDestinoPadrao.Text = s.EmailDestinoPadrao;
                 TxtAssuntoEmail.Text = s.EmailAssuntoPadrao;
-                TxtCorpoEmail.Text = s.EmailCorpoPadrao;
+                DefinirMensagemPadraoEmail();
                 TxtNomeTecnico.Text = s.NomeTecnico;
 
                 CarregarLaudosSalvos();
@@ -251,6 +251,8 @@ namespace SystemWM.Views
             AppState.UltimoRelatorioCaminho = caminho;
             AppState.UltimoRelatorioNomeAnexo = laudo.Nome;
             AppState.UltimoRelatorioTipo = laudo.Tipo;
+            var settings = AppState.Settings.Carregar();
+            DefinirMensagemPadraoEmail();
             TxtRelatorioSelecionado.Text = $"Selecionado para anexo: {laudo.Nome}";
             TxtStatus.Text = $"Relatório preparado para anexo: {caminho}";
         }
@@ -271,8 +273,17 @@ namespace SystemWM.Views
                 return;
             }
 
-            settings.EmailRemetente = "SystemWM <onboarding@resend.dev>";
-            settings.EmailDestinoPadrao = "martins.willyan20@gmail.com";
+            var dadosEmail = EmailService.NormalizarDadosEnvio(
+                TxtRemetente.Text,
+                TxtDestinoPadrao.Text,
+                TxtAssuntoEmail.Text,
+                TxtCopiaEmail.Text,
+                settings.EmailRemetente,
+                settings.EmailDestinoPadrao,
+                settings.EmailAssuntoPadrao);
+
+            settings.EmailRemetente = dadosEmail.remetente;
+            settings.EmailDestinoPadrao = dadosEmail.destinatario;
             TxtRemetente.Text = settings.EmailRemetente;
             TxtDestinoPadrao.Text = settings.EmailDestinoPadrao;
 
@@ -284,7 +295,17 @@ namespace SystemWM.Views
 
             try
             {
-                _ = new MailAddress(TxtDestinoPadrao.Text.Trim());
+                _ = new MailAddress(dadosEmail.remetente);
+            }
+            catch
+            {
+                MessageBox.Show("O e-mail do remetente informado é inválido.", "SystemWM");
+                return;
+            }
+
+            try
+            {
+                _ = new MailAddress(dadosEmail.destinatario);
             }
             catch
             {
@@ -292,11 +313,11 @@ namespace SystemWM.Views
                 return;
             }
 
-            if (!string.IsNullOrWhiteSpace(TxtCopiaEmail.Text))
+            if (!string.IsNullOrWhiteSpace(dadosEmail.cc))
             {
                 try
                 {
-                    _ = new MailAddress(TxtCopiaEmail.Text.Trim());
+                    _ = new MailAddress(dadosEmail.cc);
                 }
                 catch
                 {
@@ -305,8 +326,11 @@ namespace SystemWM.Views
                 }
             }
 
-            var assunto = string.IsNullOrWhiteSpace(TxtAssuntoEmail.Text) ? settings.EmailAssuntoPadrao : TxtAssuntoEmail.Text;
-            var corpo = string.IsNullOrWhiteSpace(TxtCorpoEmail.Text) ? settings.EmailCorpoPadrao : TxtCorpoEmail.Text;
+            var assunto = dadosEmail.assunto;
+            var corpo = EmailService.ConstruirCorpoMensagem(
+                TxtCorpoEmail.Text,
+                settings.EmailCorpoPadrao,
+                AppState.UltimoRelatorioTxtGerado);
             var assuntoFinal = AppState.Email.AplicarTemplateEmail(
                 assunto,
                 string.IsNullOrWhiteSpace(TxtDestinoPadrao.Text) ? "Cliente" : TxtDestinoPadrao.Text,
@@ -346,12 +370,12 @@ namespace SystemWM.Views
 
             var (sucesso, mensagem) = await AppState.Email.EnviarRelatorioAsync(
                 apiKey,
-                string.IsNullOrWhiteSpace(settings.EmailRemetente) ? "SystemWM <onboarding@resend.dev>" : settings.EmailRemetente,
-                TxtDestinoPadrao.Text.Trim(),
+                dadosEmail.remetente,
+                dadosEmail.destinatario,
                 assuntoFinal,
                 corpoHtml: $"<p>{WebUtility.HtmlEncode(corpoFinal).Replace("\\n", "<br>")}</p>",
                 corpoTexto: corpoFinal,
-                cc: string.IsNullOrWhiteSpace(TxtCopiaEmail.Text) ? null : TxtCopiaEmail.Text.Trim(),
+                cc: dadosEmail.cc,
                 anexos: anexos);
 
             BtnTestarEnvio.IsEnabled = true;
@@ -414,7 +438,8 @@ namespace SystemWM.Views
             s.EmailRemetente = string.IsNullOrWhiteSpace(TxtRemetente.Text) ? "SystemWM <onboarding@resend.dev>" : TxtRemetente.Text;
             s.EmailDestinoPadrao = TxtDestinoPadrao.Text;
             s.EmailAssuntoPadrao = string.IsNullOrWhiteSpace(TxtAssuntoEmail.Text) ? "Relatório de Visita Técnica - {cliente}" : TxtAssuntoEmail.Text;
-            s.EmailCorpoPadrao = string.IsNullOrWhiteSpace(TxtCorpoEmail.Text) ? "Olá {cliente},\n\nSegue o relatório da visita técnica em anexo.\n\nAtenciosamente,\n{tecnico}" : TxtCorpoEmail.Text;
+            s.EmailCorpoPadrao = "Boa tarde,\n\nSegue o relatório em anexo.\n\nAtenciosamente,\nWillyan";
+            DefinirMensagemPadraoEmail();
             s.NomeTecnico = TxtNomeTecnico.Text;
 
             AppState.Settings.Salvar(s);
@@ -428,7 +453,7 @@ namespace SystemWM.Views
             TxtCopiaEmail.Text = string.Empty;
             TxtRemetente.Text = string.Empty;
             TxtNomeTecnico.Text = string.Empty;
-            TxtCorpoEmail.Text = string.Empty;
+            DefinirMensagemPadraoEmail();
 
             TxtStatus.Text = "Mensagem limpa. O relatório anexado permanece disponível para envio.";
         }
@@ -450,6 +475,11 @@ namespace SystemWM.Views
             var pasta = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "SystemWM", "Relatorios");
             Directory.CreateDirectory(pasta);
             Process.Start(new ProcessStartInfo { FileName = pasta, UseShellExecute = true });
+        }
+
+        private void DefinirMensagemPadraoEmail()
+        {
+            TxtCorpoEmail.Text = "Boa tarde,\n\nSegue o relatório em anexo.\n\nAtenciosamente,\nWillyan";
         }
 
         private sealed class LaudoItem

@@ -19,6 +19,7 @@ namespace SystemWM.Views
         {
             InitializeComponent();
             AtualizarSeçõesRelatorioDoEstado();
+            CarregarProgramasParaSelecao();
         }
 
         private void AtualizarSeçõesRelatorioDoEstado()
@@ -39,6 +40,19 @@ namespace SystemWM.Views
                 AppState.RelatorioIncluirFirewall = ChkRelatorioFirewall.IsChecked == true;
             if (ChkRelatorioLimpeza != null)
                 AppState.RelatorioIncluirLimpeza = ChkRelatorioLimpeza.IsChecked == true;
+        }
+
+        private void CarregarProgramasParaSelecao()
+        {
+            var programas = AppState.UltimosProgramas ?? AppState.Programs.Listar();
+            AppState.UltimosProgramas = programas;
+
+            var selecionados = programas
+                .Where(p => p.IncluirNoRelatorio)
+                .OrderBy(p => p.Nome)
+                .ToList();
+
+            ListaProgramasRelatorioSelecao.ItemsSource = selecionados;
         }
 
         private ClienteVisita ColetarDadosCliente() => new()

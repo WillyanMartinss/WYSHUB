@@ -271,12 +271,12 @@
                     </Border>
 
                     <!-- Sistema -->
-                    <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource CardStyle}" Margin="0,0,0,0">
-                        <StackPanel>
+                    <Border Grid.Row="2" Grid.Column="1" Style="{StaticResource CardStyle}" Margin="0,0,0,18">
+                        <StackPanel VerticalAlignment="Center">
                             <TextBlock Text="🔷 Sistema" Style="{StaticResource TituloCard}"/>
-                            <TextBlock x:Name="TxtSisHost" Style="{StaticResource LabelSecundario}" Margin="0,8,0,2"/>
-                            <TextBlock x:Name="TxtSisBios" Style="{StaticResource LabelSecundario}" Margin="0,2"/>
-                            <TextBlock x:Name="TxtSisUptime" Style="{StaticResource LabelSecundario}" Margin="0,2"/>
+                            <TextBlock x:Name="TxtSisHost" Style="{StaticResource LabelSecundario}" Margin="0,8,0,2" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="TxtSisBios" Style="{StaticResource LabelSecundario}" Margin="0,2" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="TxtSisUptime" Style="{StaticResource LabelSecundario}" Margin="0,2" TextWrapping="Wrap"/>
                         </StackPanel>
                     </Border>
                 </Grid>

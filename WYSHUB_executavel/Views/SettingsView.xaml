@@ -43,8 +43,8 @@
                                 <!-- PDF removed -->
                             </StackPanel>
 
-                            <TextBlock Text="Observações / informações adicionais" Style="{StaticResource LabelSecundario}"/>
-                            <TextBox x:Name="TxtCorpoEmail" Margin="0,4,0,10" Height="140" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"/>
+                            <TextBlock Text="Mensagem padrão do e-mail" Style="{StaticResource LabelSecundario}"/>
+                            <TextBox x:Name="TxtCorpoEmail" Margin="0,4,0,10" Height="140" TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto" IsReadOnly="True" Background="#0B1220" Foreground="#F8FAFC"/>
                         </StackPanel>
                     </Border>
 

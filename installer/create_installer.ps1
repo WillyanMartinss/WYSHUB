@@ -1,9 +1,10 @@
 $ErrorActionPreference = 'Stop'
 
-$projectRoot = Resolve-Path (Join-Path $PSScriptRoot '..\WYSHUB')
+$projectRoot = Resolve-Path (Join-Path $PSScriptRoot '..\WYSHUB_executavel')
 $publishDir = Join-Path $projectRoot 'bin\Release\net8.0-windows\win-x64\publish'
 $exePath = Join-Path $publishDir 'WYSHUB.exe'
-$installerDir = Join-Path $PSScriptRoot 'output'
+$installerDir = Join-Path $PSScriptRoot '..\instaladores'
+$finalDir = Join-Path $PSScriptRoot '..\dist'
 $iconPath = Join-Path $projectRoot 'icons\Light.ico'
 
 Write-Host 'Publicando aplicação em Release win-x64...'
@@ -15,8 +16,18 @@ finally {
     Pop-Location
 }
 
-if (-not (Test-Path $exePath)) {
-    throw "Executável não encontrado: $exePath"
+if ($env:SIGN_CERT_PATH) {
+    if (-not (Test-Path $env:SIGN_CERT_PATH)) {
+        throw "Certificado de assinatura não encontrado: $env:SIGN_CERT_PATH"
+    }
+
+    $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+    if (-not $signtool) {
+        throw 'signtool.exe não encontrado no PATH. Instale o Windows SDK ou adicione signtool ao PATH para assinar o executável.'
+    }
+
+    Write-Host 'Assinando executável com certificado...'    
+    & $signtool.Source sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $env:SIGN_CERT_PATH /p $env:SIGN_CERT_PASSWORD $exePath
 }
 
 if (-not (Test-Path $exePath)) {
@@ -28,8 +39,9 @@ if (-not (Test-Path $iconPath)) {
 }
 
 New-Item -ItemType Directory -Force -Path $installerDir | Out-Null
+New-Item -ItemType Directory -Force -Path $finalDir | Out-Null
 
-$packageDir = Join-Path $installerDir 'WYSHUB_Installer'
+$packageDir = Join-Path $installerDir 'WYSHUB_Portavel'
 Remove-Item -Recurse -Force $packageDir -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $packageDir | Out-Null
 
@@ -65,4 +77,61 @@ $zipPath = Join-Path $installerDir 'WYSHUB_installer.zip'
 if (Test-Path $zipPath) { Remove-Item $zipPath -Force }
 Compress-Archive -Path (Join-Path $packageDir '*') -DestinationPath $zipPath -Force
 
+# Copy final portable package to root dist folder
+$finalPortableDir = Join-Path $finalDir 'WYSHUB_Portavel_Final'
+Remove-Item -Recurse -Force $finalPortableDir -ErrorAction SilentlyContinue
+New-Item -ItemType Directory -Force -Path $finalPortableDir | Out-Null
+Copy-Item -Path (Join-Path $packageDir '*') -Destination $finalPortableDir -Recurse
+
+$finalPortableZip = Join-Path $finalDir 'WYSHUB_Portavel_Final.zip'
+if (Test-Path $finalPortableZip) { Remove-Item $finalPortableZip -Force }
+Compress-Archive -Path (Join-Path $finalPortableDir '*') -DestinationPath $finalPortableZip -Force
+
 Write-Host "Instalador criado em: $zipPath"
+Write-Host "Portável final copiado para: $finalPortableDir"
+Write-Host "Zip final criado em: $finalPortableZip"
+
+# Se houver certificado configurado, assina o executável dentro do pacote
+if ($env:SIGN_CERT_PATH) {
+    $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+    if ($signtool) {
+        $appExeInPackage = Join-Path $packageDir 'WYSHUB.exe'
+        if (Test-Path $appExeInPackage) {
+            Write-Host "Assinando $appExeInPackage..."
+            & $signtool.Source sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $env:SIGN_CERT_PATH /p $env:SIGN_CERT_PASSWORD $appExeInPackage
+        }
+    }
+    else {
+        Write-Warning 'signtool.exe não encontrado no PATH. Pulei assinatura dos binários.'
+    }
+}
+
+# Tentar compilar o instalador Inno Setup se o compilador estiver disponível
+$issPath = Join-Path $PSScriptRoot 'WYSHUB.iss'
+$iscc = Get-Command iscc.exe -ErrorAction SilentlyContinue
+if ($iscc -and (Test-Path $issPath)) {
+    Write-Host 'Compilando instalador com Inno Setup (iscc.exe)...'
+    Push-Location $PSScriptRoot
+    try {
+        & $iscc.Source $issPath | Write-Host
+    }
+    finally {
+        Pop-Location
+    }
+
+    # O instalador compilado agora sai na pasta instaladores/
+    $setupExe = Join-Path $installerDir 'WYSHUB_Setup.exe'
+    if ((Test-Path $setupExe) -and $env:SIGN_CERT_PATH) {
+        $signtool = Get-Command signtool.exe -ErrorAction SilentlyContinue
+        if ($signtool) {
+            Write-Host "Assinando instalador $setupExe..."
+            & $signtool.Source sign /fd SHA256 /tr http://timestamp.digicert.com /td SHA256 /f $env:SIGN_CERT_PATH /p $env:SIGN_CERT_PASSWORD $setupExe
+        }
+    }
+
+    if (Test-Path $setupExe) {
+        $finalSetupExe = Join-Path $finalDir 'WYSHUB_Setup_Final.exe'
+        Copy-Item -Path $setupExe -Destination $finalSetupExe -Force
+        Write-Host "Instalador final copiado para: $finalSetupExe"
+    }
+}
